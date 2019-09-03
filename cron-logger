@@ -1,0 +1,39 @@
+#!/bin/bash
+# Usage: cron-logger <tag> <command> [args]
+# Example: cron-logger backup ./backup.sh --verbose
+#
+#
+# The cron-logger is wrapper script for cron jobs. It intends to reduces email
+# from crond.  By default, crond sends the output to your mailbox.  This
+# behavior is VERY BAD.  You will be exhausted and will no longer read emails
+# from crond.
+#
+# The cron-logger sends all outupt (stdout and stderr) to system log.  If
+# command failed, cron-logger also send the output to crond.
+#
+#
+# Copyright (C) 2014-2019 yuuki0xff <yuuki0xff@gmail.com> - All Rights Reserved
+# License: Apache 2.0
+# https://github.com/yuuki0xff/cron-logger
+
+set -eu
+set -o pipefail
+
+this=cron-logger
+tag=$1
+tmp=$(mktemp --suffix=$this)
+trap 'rm $tmp' EXIT
+shift
+
+echo "$*" |logger -t "$this"
+set +e
+"$@" 2>&1 |tee -p exit "$tmp" |logger -t "$this"
+exit_value=$?
+set -e
+
+# If a command failed, send the output to crond.
+if [ $exit_value -ne 0 ]; then
+	cat $tmp
+fi
+
+exit $exit_value
