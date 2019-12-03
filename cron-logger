@@ -27,7 +27,7 @@ shift
 
 echo "$*" |logger -t "$tag"
 set +e
-"$@" 2>&1 |tee -p exit "$tmp" |logger -t "$tag"
+"$@" 2>&1 |tee -p "$tmp" |logger -t "$tag"
 exit_value=$?
 set -e
 
